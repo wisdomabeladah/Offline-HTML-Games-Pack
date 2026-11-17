@@ -1,6 +1,7 @@
 name: Build offline game APK
 
 on:
+  pull_request:
   workflow_dispatch:
     inputs:
       game_file:
@@ -18,6 +19,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            ${{ inputs.game_file }}
+            android
 
       - name: Validate and stage selected game
         shell: bash

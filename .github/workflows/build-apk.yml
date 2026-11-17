@@ -1,0 +1,67 @@
+name: Build offline game APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      game_file:
+        description: 'Path to one self-contained game HTML file'
+        required: true
+        default: 'offline/2048.html'
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate and stage selected game
+        shell: bash
+        env:
+          GAME_FILE: ${{ inputs.game_file }}
+        run: |
+          set -euo pipefail
+          case "$GAME_FILE" in
+            offline/*.html|offline/*.htm) ;;
+            *) echo "Only files under offline/ are allowed"; exit 1 ;;
+          esac
+          test -f "$GAME_FILE" || { echo "Game file not found: $GAME_FILE"; exit 1; }
+          mkdir -p android/app/src/main/assets
+          cp "$GAME_FILE" android/app/src/main/assets/game.html
+          printf '%s\n' "$(basename "$GAME_FILE")" > android/app/src/main/assets/game-name.txt
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build debug APK
+        working-directory: android
+        run: gradle --no-daemon assembleDebug
+
+      - name: Rename APK
+        shell: bash
+        run: |
+          mkdir -p dist
+          name="${{ inputs.game_file }}"
+          name="${name##*/}"
+          name="${name%.*}"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "dist/offline-${name}.apk"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-game-apk
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 14

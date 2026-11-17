@@ -15,3 +15,13 @@ The downside of inlining everything is the file size. If you're running the file
 # For **Chromebooks** - See [chromeOS.md](methods/chromeOS.md)
 
 
+
+## Build an offline Android APK
+
+This repository contains many large self-contained HTML games, so the Android build packages **one game per APK**. This keeps each APK installable and within GitHub artifact limits while preserving fully offline play.
+
+1. Open the **Actions** tab and select **Build offline game APK**.
+2. Click **Run workflow** and enter a file such as `offline/2048.html` or `offline/google-dino.html`.
+3. Download the `offline-game-apk` artifact from the completed workflow run and install the APK on Android. Enable installation from the browser/file manager when Android asks.
+
+The APK has no network permission and loads the selected game from bundled app assets. The workflow accepts only files under `offline/` with an `.html` or `.htm` extension.
